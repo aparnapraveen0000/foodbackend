@@ -1,0 +1,26 @@
+const express = require('express')
+const router= express.Router()
+const userRoutes=require("./userRoutes.js")
+const adminRoutes=require("./adminRoutes.js")
+const cartRoutes=require("./cartRoutes.js")
+const couponRoutes=require("./couponRoutes.js")
+const menuRoutes=require("./menuRoutes.js")
+const orderRoutes=require("./orderRoutes.js")
+const reviewRoutes=require("./reviewRoutes.js")
+const paymentRoutes=require("./paymentRoutes.js")
+const restaurantRoutes=require("./restaurantRoutes.js")
+const sellerRoutes=require("./sellerRoutes.js")
+
+
+router.use("/user",userRoutes)
+router.use("/admin",adminRoutes)
+router.use("/cart",cartRoutes)
+router.use("/coupon",couponRoutes)
+router.use("/menu",menuRoutes)
+router.use("/order",orderRoutes)
+router.use("/review",reviewRoutes)
+router.use("/payment", paymentRoutes)
+router.use("/restaurant",restaurantRoutes)
+router.use("/seller",sellerRoutes)
+
+module.exports = { apiRouter: router };
