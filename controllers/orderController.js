@@ -6,81 +6,41 @@ const Stripe = require('stripe');
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
 // Create a new order from cart
+
 const createOrder = async (req, res, next) => {
     try {
-        const userId = req.user._id;
-        const { discount = 0 } = req.body;
+        const { restaurantId, orderItems } = req.body;
+        const userId = req.user.id;
 
-        const cart = await cartModel
-            .findOne({ userId })
-            .populate({
-                path: 'items.foodId',
-                select: 'itemName price restaurant',
-            });
-
-        if (!cart || !cart.items || cart.items.length === 0) {
-            return res.status(400).json({ message: 'Cart is empty or not found' });
-        }
-
-        if (typeof discount !== 'number' || discount < 0) {
-            return res.status(400).json({ message: 'Invalid discount value' });
-        }
-
-        let restaurantName = null;
-        const orderItems = [];
-        let totalQuantity = 0;
-
-        for (const item of cart.items) {
-            if (!item.foodId || !item.foodId._id || !item.quantity || !item.price) {
-                return res.status(400).json({ message: 'Invalid cart item data' });
+        // Validate menu items
+        for (const item of orderItems) {
+            const menuItem = await menuModel.findById(item.itemNameId);
+            if (!menuItem) {
+                return res.status(400).json({ message: `Menu item ${item.itemNameId} not found` });
             }
-
-            if (!restaurantName) {
-                const restaurant = await restaurantModel.findById(item.foodId.restaurant);
-                if (!restaurant) {
-                    return res.status(404).json({ message: 'Restaurant not found' });
-                }
-                restaurantName = restaurant.name;
-            }
-
-            orderItems.push({
-                itemNameId: item.foodId._id,
-                quantity: item.quantity,
-                price: item.price,
-            });
-
-            totalQuantity += item.quantity;
         }
 
-        const totalPrice = cart.items.reduce((sum, item) => {
-            return sum + item.price * item.quantity;
-        }, 0) - discount;
+        // Calculate totals
+        const totalPrice = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+        const totalQuantity = orderItems.reduce((sum, item) => sum + item.quantity, 0);
 
-        if (totalPrice < 0) {
-            return res.status(400).json({ message: 'Invalid discount value. Total price cannot be negative' });
-        }
-
-        const newOrder = new orderModel({
+        // Create order
+        const order = await orderModel.create({
             userId,
-            orderItems,
-            restaurantName,
-            discount,
+            restaurantName: 'Some Restaurant', // Replace with actual logic (e.g., fetch from restaurantModel)
             totalPrice,
             totalQuantity,
-            paymentStatus: 'completed',
-            orderStatus: 'confirmed',
+            orderStatus: 'Pending',
+            paymentStatus: 'Pending',
+            orderItems,
         });
 
-        await newOrder.save();
-
-        await cartModel.findOneAndDelete({ userId });
-
-        res.status(201).json({ message: 'Order created successfully', data: newOrder });
+        res.status(201).json({ data: order, message: 'Order created successfully' });
     } catch (error) {
-        console.error('Error creating order:', error);
-        res.status(error.statusCode || 500).json({ message: error.message || 'Internal server error' });
+        res.status(500).json({ message: error.message || 'Internal server error' });
     }
 };
+
 
 // Get a single order by ID (updated with userId check)
 const getSingleOrder = async (req, res, next) => {
@@ -193,25 +153,29 @@ const deleteOrder = async (req, res, next) => {
     }
 };
 
-const getUserOrders = async (req, res) => {
+
+
+// Get user's orders
+const getUserOrders = async (req, res, next) => {
     try {
-        const userId = req.user._id;
+        const userId = req.user.id; // Assuming user ID from auth middleware
         const orders = await orderModel
             .find({ userId })
-            .populate({
-                path: 'orderItems.itemNameId',
-                select: 'itemName price foodImage category',
-            })
-            .sort({ createdAt: -1 });
-        if (!orders || orders.length === 0) {
-            return res.status(404).json({ message: 'No orders found for this user' });
-        }
-        res.status(200).json(orders);
+            .populate('orderItems.itemNameId') // Populate menu item details
+            .lean(); // Convert to plain JS object for manipulation
+
+        // Filter out invalid orderItems (where itemNameId is null)
+        const cleanedOrders = orders.map(order => ({
+            ...order,
+            orderItems: order.orderItems.filter(item => item.itemNameId), // Remove items with null itemNameId
+        }));
+
+        res.status(200).json(cleanedOrders);
     } catch (error) {
-        console.error('Error fetching user orders:', error);
-        res.status(500).json({ message: 'Server error while fetching orders' });
+        res.status(500).json({ message: error.message || 'Internal server error' });
     }
 };
+
 
 module.exports = {
     getUserOrders,
