@@ -75,7 +75,7 @@ const userLogin = async (req, res, next) => {
         const token = generateToken(userExist._id, "user");
 
         res.cookie("token", token, {
-            httpOnly: false, // Set to false so frontend can access it if needed
+            httpOnly: true, // Set to false so frontend can access it if needed
             secure: process.env.NODE_ENV === "production",
             sameSite: "None",
             expires: new Date(Date.now() + 60 * 60 * 1000),
