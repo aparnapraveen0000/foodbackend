@@ -10,7 +10,7 @@ const authUser = async (req, res, next) => {
         // If no token is found, return authentication error
         if (!token) {
             console.log("No token found, user not authenticated.");
-            return res.status(401).json({ message: "User not authenticated" });
+            return res.status(401).json({ message: "Authentication token is missing" });
         }
 
         // Verify the token using the secret key from environment variables
@@ -30,7 +30,7 @@ const authUser = async (req, res, next) => {
     } catch (error) {
         // Log the error and send a response indicating invalid token
         console.error("Auth Error:", error);
-        res.status(401).json({ message: "Invalid token" });
+        return res.status(401).json({ message: "Invalid or expired token", error: error.message });
     }
 };
 
