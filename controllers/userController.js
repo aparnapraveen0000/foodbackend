@@ -1,51 +1,43 @@
-const bcrypt =require("bcryptjs");
+const bcrypt = require("bcryptjs");
 const userModel = require("../model/userModel.js");
 const { generateToken } = require("../utils/token.js");
 
 // User Signup
 const userSignup = async (req, res, next) => {
     try {
-        // Collect user data
         const { name, email, password, mobile, address, confirmPassword, profilePic } = req.body;
 
-        // Data validation
         if (!name || !email || !password || !mobile || !address || !confirmPassword) {
             return res.status(400).json({ message: "All fields are required" });
         }
 
-        // Check if user already exists
         const userExist = await userModel.findOne({ email });
         if (userExist) {
             return res.status(400).json({ message: "This user already exists" });
         }
 
-        // Compare password and confirm password
         if (password !== confirmPassword) {
             return res.status(400).json({ message: "Passwords do not match" });
         }
 
-        // Hash password
         const hashedPassword = bcrypt.hashSync(password, 10);
 
-        // Save user to DB
         const newUser = new userModel({ name, email, password: hashedPassword, mobile, address, profilePic });
         await newUser.save();
 
-        // Generate token
         const token = generateToken(newUser._id, "user");
 
-        // Set token as a cookie
         res.cookie("token", token, {
-            httpOnly: false, 
+            httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: "None",
-            expires: new Date(Date.now() + 60 * 60 * 1000) // 1-hour expiry
+            maxAge: 60 * 60 * 1000 // 1 hour
         });
 
         res.json({ data: newUser, message: "Signup successful" });
     } catch (error) {
-        res.status(500).json({ message: error.message || "Internal server error" });
         console.log(error);
+        res.status(500).json({ message: error.message || "Internal server error" });
     }
 };
 
@@ -75,23 +67,18 @@ const userLogin = async (req, res, next) => {
         const token = generateToken(userExist._id, "user");
 
         res.cookie("token", token, {
-            httpOnly: true, // Set to false so frontend can access it if needed
+            httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: "None",
-            expires: new Date(Date.now() + 60 * 60 * 1000),
+            maxAge: 60 * 60 * 1000
         });
 
         const userData = await userModel.findById(userExist._id).select("-password");
 
-        // Include token in the response
-        res.json({ 
-            data: userData, 
-            token: token, // Add token here
-            message: "Login successful" 
-        });
+        res.json({ data: userData, token, message: "Login successful" });
     } catch (error) {
-        res.status(500).json({ message: error.message || "Internal server error" });
         console.log(error);
+        res.status(500).json({ message: error.message || "Internal server error" });
     }
 };
 
@@ -107,8 +94,8 @@ const userProfile = async (req, res, next) => {
 
         res.json({ data: userData, message: "User profile fetched" });
     } catch (error) {
-        res.status(500).json({ message: error.message || "Internal server error" });
         console.log(error);
+        res.status(500).json({ message: error.message || "Internal server error" });
     }
 };
 
@@ -120,7 +107,6 @@ const updateUserProfile = async (req, res, next) => {
 
         const updateData = { name, email, mobile, address, profilePic };
 
-        // Hash new password if provided
         if (password) {
             updateData.password = bcrypt.hashSync(password, 10);
         }
@@ -133,8 +119,8 @@ const updateUserProfile = async (req, res, next) => {
 
         res.json({ data: updatedUser, message: "User profile updated" });
     } catch (error) {
-        res.status(500).json({ message: error.message || "Internal server error" });
         console.log(error);
+        res.status(500).json({ message: error.message || "Internal server error" });
     }
 };
 
@@ -144,8 +130,8 @@ const userLogout = async (req, res, next) => {
         res.clearCookie("token", { sameSite: "None", secure: true });
         res.json({ message: "User logged out" });
     } catch (error) {
-        res.status(500).json({ message: error.message || "Internal server error" });
         console.log(error);
+        res.status(500).json({ message: error.message || "Internal server error" });
     }
 };
 
@@ -158,6 +144,7 @@ const checkUser = async (req, res, next) => {
     }
 };
 
+// Delete User
 const DeleteUser = async (req, res, next) => {
     try {
         const userId = req.params.id;
@@ -179,6 +166,7 @@ const DeleteUser = async (req, res, next) => {
     }
 };
 
+// Get All Users
 const getAllUsers = async (req, res, next) => {
     try {
         const users = await userModel.find().select("-password"); 
@@ -189,15 +177,13 @@ const getAllUsers = async (req, res, next) => {
     }
 };
 
-
-
 module.exports = { 
     userSignup, 
     userLogin, 
     userProfile, 
     updateUserProfile, 
     userLogout, 
-   checkUser,
-   DeleteUser,
-   getAllUsers 
+    checkUser,
+    DeleteUser,
+    getAllUsers 
 };

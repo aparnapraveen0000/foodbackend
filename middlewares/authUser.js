@@ -4,7 +4,7 @@ const User = require("../model/userModel");
 const authUser = async (req, res, next) => {
     try {
         const token = req.cookies.token;
-        console.log("Token from cookies:", token); // Debug the token
+        console.log("Token from cookies:", token); // For debugging
 
         if (!token) {
             return res.status(401).json({ message: "User not authenticated" });
