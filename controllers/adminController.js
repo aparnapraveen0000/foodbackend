@@ -33,7 +33,14 @@ const adminSignup=async(req,res,next)=>{
   // generate token using id and role
 
 const token=generateToken(newAdmin._id,"admin")
-res.cookie("token",token)
+
+res.cookie("token", token, {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "None",
+  maxAge: 60 * 60 * 1000
+});
+
 
 res.json({data:newAdmin,message:"signup success"})
 
@@ -73,13 +80,12 @@ const adminLogin = async (req, res, next) => {
 
     // Generate token
     const token = generateToken(adminExist._id, "admin");
-
-    // ✅ Set token in cookie
     res.cookie("token", token, {
-      httpOnly: true,      // Cookie cannot be accessed from JavaScript
-      secure: false,       // Set to true if using HTTPS
-      sameSite: "lax",     // Prevents CSRF
-    });
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "None",
+      maxAge: 60 * 60 * 1000
+  });
 
     // Exclude password from response
     const { password: pw, ...adminData } = adminExist._doc;
