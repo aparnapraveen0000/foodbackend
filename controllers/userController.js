@@ -68,13 +68,13 @@ const userLogin = async (req, res, next) => {
 
         res.cookie("token", token, {
             httpOnly: true,
-            secure:false,
+            secure:true,
             sameSite:"Lax",
             maxAge: 60 * 60 * 1000
         });
         res.cookie("dummycontent", "dummycontent", {
             httpOnly: true,
-            secure:false,
+            secure:true,
             sameSite:"Lax",
             maxAge: 60 * 60 * 1000
         });
