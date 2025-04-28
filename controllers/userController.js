@@ -72,7 +72,12 @@ const userLogin = async (req, res, next) => {
             sameSite:"Lax",
             maxAge: 60 * 60 * 1000
         });
-
+        res.cookie("dummycontent", "dummycontent", {
+            httpOnly: true,
+            secure:false,
+            sameSite:"Lax",
+            maxAge: 60 * 60 * 1000
+        });
         const userData = await userModel.findById(userExist._id).select("-password");
 
         res.json({ data: userData, token, message: "Login successful" });
