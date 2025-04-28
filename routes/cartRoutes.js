@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router()
 const{authUser}=require("../middlewares/authUser.js")
-const{addToCart, getCart, removeFromCart, deleteCart}=require("../controllers/cartController.js")
+const{addToCart, getCart, removeFromCart, deleteCart,getUserCart}=require("../controllers/cartController.js")
 
 // add item to cart
 router.post("/add",authUser,addToCart)
@@ -16,6 +16,6 @@ router.put("/remove",authUser,removeFromCart)
 // Delete entire cart
 router.delete("/delete",authUser,deleteCart)
 
-
+router.get('/items', authUser, getUserCart);
 
 module.exports=router

@@ -12,12 +12,30 @@ const createOrder = async (req, res, next) => {
         const { restaurantId, orderItems } = req.body;
         const userId = req.user.id;
 
-        // Validate menu items
+        // Validate menu items and restaurant consistency
+        let restaurantIdFromItems = null;
         for (const item of orderItems) {
             const menuItem = await menuModel.findById(item.itemNameId);
             if (!menuItem) {
                 return res.status(400).json({ message: `Menu item ${item.itemNameId} not found` });
             }
+            if (!menuItem.itemAvailability) {
+                return res.status(400).json({ message: `Menu item ${menuItem.itemName} is unavailable` });
+            }
+            if (!restaurantIdFromItems) {
+                restaurantIdFromItems = menuItem.restaurant;
+            } else if (restaurantIdFromItems.toString() !== menuItem.restaurant.toString()) {
+                return res.status(400).json({ message: 'All items must be from the same restaurant' });
+            }
+        }
+
+        // Validate restaurant
+        if (!restaurantId || restaurantId !== restaurantIdFromItems.toString()) {
+            return res.status(400).json({ message: 'Invalid or mismatched restaurant ID' });
+        }
+        const restaurant = await restaurantModel.findById(restaurantId);
+        if (!restaurant) {
+            return res.status(400).json({ message: 'Restaurant not found' });
         }
 
         // Calculate totals
@@ -27,16 +45,20 @@ const createOrder = async (req, res, next) => {
         // Create order
         const order = await orderModel.create({
             userId,
-            restaurantName: 'Some Restaurant', // Replace with actual logic (e.g., fetch from restaurantModel)
+            restaurantName: restaurant.name, // Use actual restaurant name
             totalPrice,
             totalQuantity,
             orderStatus: 'Pending',
-            paymentStatus: 'Pending',
+            paymentStatus: 'confirmed',
             orderItems,
         });
 
+        // Clear cart
+        await cartModel.updateOne({ userId }, { items: [], totalPrice: 0 });
+
         res.status(201).json({ data: order, message: 'Order created successfully' });
     } catch (error) {
+        console.error('Error creating order:', error);
         res.status(500).json({ message: error.message || 'Internal server error' });
     }
 };

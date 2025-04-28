@@ -131,9 +131,41 @@ const deleteCart = async (req, res) => {
   }
 };
 
+
+
+
+
+const getUserCart = async (req, res) => {
+    try {
+        const userId = req.user.id; // From authUser middleware
+        const cart = await cartModel
+            .findOne({ userId })
+            .populate({
+                path: 'items.foodId',
+                select: 'itemName price foodImage category restaurant itemAvailability',
+                match: { itemAvailability: true } // Only include available items
+            });
+        
+        if (!cart) {
+            return res.status(404).json({ message: 'Cart not found' });
+        }
+
+        // Filter out items with null foodId (in case population failed)
+        cart.items = cart.items.filter(item => item.foodId);
+        
+        res.status(200).json({ data: cart, message: 'Cart retrieved successfully' });
+    } catch (error) {
+        console.error('Error fetching cart:', error);
+        res.status(500).json({ message: error.message || 'Internal server error' });
+    }
+};
+
+
+
 module.exports = {
   addToCart,
   getCart,
   removeFromCart,
   deleteCart,
+  getUserCart
 };
