@@ -37,7 +37,12 @@ const sellerSignup=async(req,res,next)=>{
   // generate token using id and role
 
 const token=generateToken(newSeller._id,"seller")
-res.cookie("token",token)
+res.cookie("token",token,{
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production", // Set to true in production with HTTPS
+  sameSite:"None",
+  maxAge: 60 * 60 * 1000
+})
 
 res.json({data:newSeller,message:"signup success"})
 
@@ -77,8 +82,9 @@ const sellerLogin=async(req,res,next)=>{
   const token=generateToken(sellerExist._id,"seller")
   res.cookie("token", token, {
     httpOnly: true,
-    secure: false, // Set to true in production with HTTPS
-    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production", // Set to true in production with HTTPS
+    sameSite:"None",
+    maxAge: 60 * 60 * 1000
   });
 
   // to remove password from sellerExist and send other details to frontend
