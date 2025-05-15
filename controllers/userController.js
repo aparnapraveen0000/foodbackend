@@ -143,11 +143,20 @@ const userLogout = async (req, res, next) => {
 // Check User Authorization
 const checkUser = async (req, res, next) => {
     try {
-        res.json({ message: "User authorized" });
+        res.status(200).json({
+            success: true,
+            message: "User authorized",
+            user: req.user, // this is already populated by authUser middleware
+        });
     } catch (error) {
-        res.status(500).json({ message: error.message || "Internal server error" });
+        console.error("checkUser error:", error);
+        res.status(500).json({
+            success: false,
+            message: error.message || "Internal server error",
+        });
     }
 };
+
 
 // Delete User
 const DeleteUser = async (req, res, next) => {
