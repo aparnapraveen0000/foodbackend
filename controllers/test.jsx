@@ -150,4 +150,15 @@
 // //         res.status(error.statusCode || 500).json({message:error.message||"internal server error"})
 // //     }
 // // }
-// 
+// //  res.cookie("dummycontent", "dummycontent", {
+//             httpOnly:true,
+//             secure:false,
+//             sameSite:"Lax",
+//             maxAge: 60 * 60 * 1000
+//         });
+//  res.cookie("token", token, {
+//             httpOnly:true,
+//             secure:true,
+//             sameSite:"None",
+//             maxAge: 60 * 60 * 1000
+//         });
